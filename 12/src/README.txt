@@ -1,4 +1,4 @@
-Para arrancar el programa en deberá primero compilar el fichero domotic.c escribiendo el siguiente comando en el terminal:
+Para arrancar el programa deberá primero compilar el fichero domotic.c escribiendo el siguiente comando en el terminal:
 
 	gcc domotic.c -o domotic -pthread
 
