@@ -6,6 +6,7 @@
 #include <pthread.h>
 
 #include "kbhit.c" // Para poder detectar las teclas pulsadas sin bloqueo y leer las teclas pulsadas
+#include "task.c"
 
 #define CLK_MS 10
 
