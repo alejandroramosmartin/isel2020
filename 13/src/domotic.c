@@ -37,11 +37,8 @@ LIGHT CONTROL FUNCTIONS
 -------------------------------------------------------------*/
 
 int LightButtonPressed (fsm_t *this) {
-	int result = 0;
 
-	result = (button_light & LIGHT_ACTIVE);
-
-	return result;
+	return button_light;
 }
 
 int LightTimeoutReached (fsm_t *this) {
@@ -54,19 +51,19 @@ int LightTimeoutReached (fsm_t *this) {
 
 void ActivateLight (fsm_t *this) {
 
-	button_light &= (~LIGHT_ACTIVE);
+	button_light = 0;
 
 	// Start/restart the timer
 	struct timeval now;
 	gettimeofday (&now, NULL);
 
-	static struct timeval period = { 10, 0 };	//The light switches off after 60 seconds
+	static struct timeval period = { 60, 0 };	//The light switches off after 60 seconds
 	timeval_add (&next_light, &now, &period);
 
 	// Switch on the light
 	light_active = 1;
 
-	printf("Domotic Controller State: [LIGHT ON]\n");
+	printf("Light Controller: [LIGHT ON]\n");
 	fflush(stdout);
 }
 
@@ -74,7 +71,7 @@ void DeactivateLight (fsm_t *this) {
 
 	light_active = 0;
 
-	printf("Domotic Controller State: [LIGHT OFF]\n");
+	printf("Light Controller: [LIGHT OFF]\n");
 	fflush(stdout);
 }
 
@@ -115,7 +112,7 @@ void ReactivateCounter (fsm_t *this) {
 	struct timeval now;
 	gettimeofday (&now, NULL);
 
-	static struct timeval period = { 5, 0 };
+	static struct timeval period = { 1, 0 };
 	timeval_add (&next_alarm, &now, &period);
 }
 
@@ -127,7 +124,7 @@ void SelectDigit (fsm_t *this) {
 	digit_out = digit_count;
 	digit_count = 0;
 	new_digit = 1;
-	printf("[DIGIT SELECTED: %d]\n", digit_out);
+	printf("Alarm Controller: [DIGIT SELECTED: %d]\n", digit_out);
 }
 
 /*-------------------------------------------------------------
@@ -156,7 +153,7 @@ int VerifyToArm (fsm_t *this) {
 
 int CodeNotOK (fsm_t *this) {
 
-	printf("[CODE NOT OK]\n");
+	printf("Alarm Controller: [CODE NOT OK]\n");
 	return (!code_ok);
 }
 
@@ -168,7 +165,7 @@ int always (fsm_t *this) {
 void AddToCode (fsm_t *this) {
 
 	alarm_code[num_digits] = digit_out;
-	printf("[ALARM CODE]: [%d,%d,%d]\n", alarm_code[0], alarm_code[1], alarm_code[2]);
+	printf("Alarm Controller: [ALARM CODE: [%d,%d,%d]]\n", alarm_code[0], alarm_code[1], alarm_code[2]);
 
 	num_digits += 1;
 
@@ -191,7 +188,7 @@ void ActivateAlert (fsm_t *this) {
 	
 	alarm_alert = 1;
 	presence = 0;
-	printf("[ALERT ACTIVATED]\n");
+	printf("Alarm Controller: [ALERT ACTIVATED]\n");
 }
 
 void EmptyCode (fsm_t *this) {
@@ -206,13 +203,13 @@ void DisarmAlarm (fsm_t *this) {
 	
 	if (alarm_alert) {
 		alarm_alert = 0;
-		printf("[ALERT DEACTIVATED]\n");
+		printf("Alarm Controller: [ALERT DEACTIVATED]\n");
 	}
 	
 	mem_code[0] = -1;
 	mem_code[1] = -1;
 	mem_code[2] = -1;
-	printf("[ALARM DISARMED]\n");
+	printf("Alarm Controller: [ALARM DISARMED]\n");
 
 	code_ok = 0;
 }
@@ -227,7 +224,7 @@ void ArmAlarm (fsm_t *this) {
 	alarm_code[0] = -1;
 	alarm_code[1] = -1;
 	alarm_code[2] = -1;
-	printf("[ALARM ARMED]\n");
+	printf("Alarm Controller: [ALARM ARMED]\n");
 
 	code_ok = 0;
 }
@@ -246,13 +243,13 @@ void * PC_keyboard (void *param) {
 				case 'l':
 					printf("\nLight button pressed!\n");
 					fflush(stdout);
-					button_light |= LIGHT_ACTIVE;
+					button_light = 1;
 					break;
 
 				case 'c':
 					printf("\nAlarm button pressed!\n");
 					fflush(stdout);
-					button_alarm |= ALARM_BUTTON_PRESSED;
+					button_alarm = 1;
 					break;
 
 				case 'p':
@@ -399,7 +396,7 @@ int main() {
 
 	printf("Starting program...\n");
 
-	printf("\nPlease press l to activate the light or c to introduce the code to arm/disarm the alarm system.\n");
+	printf("\nPlease press l to activate the light or c to introduce the code to arm/disarm the alarm system. Press p to detect presence.\n");
 	printf("If you want to exit the program please press q.\n");
 
 

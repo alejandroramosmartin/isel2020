@@ -20,44 +20,11 @@ int mem_code[3] = {-1,-1,-1};
 
 
 
-
 /*-------------------------------------------------------------
 TIME AUXILIAR FUNCTIONS
 -------------------------------------------------------------*/
 
-int
-timeval_less (const struct timeval* a, const struct timeval* b)
-{
-  return (a->tv_sec == b->tv_sec)? (a->tv_usec < b->tv_usec) :
-    (a->tv_sec < b->tv_sec);
-}
-
-void
-timeval_add (struct timeval* res,
-             const struct timeval* a, const struct timeval* b)
-{
-  res->tv_sec = a->tv_sec + b->tv_sec;
-  res->tv_usec = a->tv_usec + b->tv_usec;
-  if (res->tv_usec >= 1000000) {
-    res->tv_sec += res->tv_usec / 1000000;
-    res->tv_usec = res->tv_usec % 1000000;
-  }
-}
-
-void
-timeval_sub (struct timeval* res,
-             const struct timeval* a, const struct timeval* b)
-{
-  res->tv_sec = a->tv_sec - b->tv_sec;
-  res->tv_usec = a->tv_usec - b->tv_usec;
-  if (res->tv_usec < 0) {
-    res->tv_sec --;
-    res->tv_usec += 1000000;
-  }
-}
-
-void 
-delay_until (struct timeval* next_activation)
+void delay_until (struct timeval* next_activation)
 {
   struct timeval now, timeout;
   gettimeofday (&now, NULL);
@@ -264,7 +231,7 @@ void ArmAlarm (fsm_t *this) {
 
 
 
-void *PC_keyboard (void *param) {
+void * PC_keyboard (void *param) {
 	int teclaPulsada;
 
 	while (1) {
@@ -306,29 +273,21 @@ void *PC_keyboard (void *param) {
 	
 }
 
+fsm_t* fsm_new_light () {
 
-int main() {
-
-	printf("Starting program...\n");
-
-	printf("\nPlease press l to activate the light or c to introduce the code to arm/disarm the alarm system. Press p to detect presence.\n");
-	printf("If you want to exit the program please press q.\n");
-
-
-	// Creates thread for keyboard lecture
-	pthread_t thread_keyboard_id;
-
-	pthread_create(&thread_keyboard_id, NULL, PC_keyboard, NULL);
-	// pthread_join(thread_keyboard_id, NULL);
-
-	fsm_trans_t light[] = {
+	static struct fsm_trans_t light[] = {
 		{ LIGHT_OFF, LightButtonPressed, LIGHT_ON, ActivateLight },
 		{ LIGHT_ON, LightTimeoutReached, LIGHT_OFF, DeactivateLight },
 		{ LIGHT_ON, LightButtonPressed, LIGHT_ON, ActivateLight },
 		{ -1, NULL, -1, NULL },
 	};
 
-	fsm_trans_t digits[] = {
+	return fsm_new(light);
+}
+
+fsm_t* fsm_new_digit () {
+
+	static struct fsm_trans_t digits[] = {
 		{ IDLE, AlarmButtonPressed, D1, ReactivateCounter },
 		{ D1, NextDigit, D2, ReactivateCounter },
 		{ D1, DigitTimeout, IDLE, SelectDigit },
@@ -353,7 +312,12 @@ int main() {
 		{ -1, NULL, -1, NULL },
 	};
 
-	fsm_trans_t code[] = {
+	return fsm_new(digits);
+}
+
+fsm_t* fsm_new_code () {
+
+	static struct fsm_trans_t code[] = {
 		{ DISARMED, CheckNewDigit, DIGIT1, AddToCode },
 		{ DIGIT1, CheckNewDigit, DIGIT2, AddToCode },
 		{ DIGIT1, DetectedPresence, ALERT1, ActivateAlert },
@@ -373,22 +337,71 @@ int main() {
 		{ -1, NULL, -1, NULL },
 	};
 
-	fsm_t* fsm_light = fsm_new (light);
-	fsm_t* fsm_digit = fsm_new (digits);
-	fsm_t* fsm_code = fsm_new (code);
+	return fsm_new(code);
+}
 
-	struct timeval period = { 0, 10 };
-	struct timeval next;
-	gettimeofday(&next, NULL);
+
+fsm_t* fsm_light;
+fsm_t* fsm_digit;
+fsm_t* fsm_code;
+
+
+static void light_function (struct event_handler_t* this) {
+    	
+    static const struct timeval period = { 0, 10 };	//10 ms
+    fsm_fire (fsm_light);
+    timeval_add (&this->next_activation, &this->next_activation, &period);
+	
+}
+
+static void alarm_digit_function (struct event_handler_t* this) {
+
+	static const struct timeval period = { 0, 10 };	//10 ms
+    fsm_fire (fsm_digit);
+    timeval_add (&this->next_activation, &this->next_activation, &period);
+
+}
+
+static void alarm_code_function (struct event_handler_t* this) {
+
+	static const struct timeval period = { 0, 10 };	//10 ms
+    fsm_fire (fsm_code);
+    timeval_add (&this->next_activation, &this->next_activation, &period);
+	
+}
+
+
+int main() {
+
+	printf("Starting program...\n");
+
+	printf("\nPlease press l to activate the light or c to introduce the code to arm/disarm the alarm system. Press p to detect presence.\n");
+	printf("If you want to exit the program please press q.\n");
+
+	// Creates thread for keyboard lecture
+	pthread_t thread_keyboard_id;
+
+	pthread_create(&thread_keyboard_id, NULL, PC_keyboard, NULL);
+
+	EventHandler eh_light, eh_digit, eh_code;
+	reactor_init ();
+
+	fsm_light = fsm_new_light();
+	fsm_digit = fsm_new_digit();
+	fsm_code = fsm_new_code();
+
+	event_handler_init (&eh_light, 3, light_function);
+	reactor_add_handler (&eh_light);
+
+	event_handler_init (&eh_digit, 2, alarm_digit_function);
+	reactor_add_handler (&eh_digit);
+
+	event_handler_init (&eh_code, 1, alarm_code_function);
+	reactor_add_handler (&eh_code);
 
 	while (1) {
 
-		fsm_fire (fsm_light);
-		fsm_fire (fsm_digit);
-		fsm_fire (fsm_code);
-
-		timeval_add (&next, &next, &period);
-		delay_until (&next);
+    	reactor_handle_events ();
 	}
 
 	return 0;

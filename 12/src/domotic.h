@@ -7,7 +7,6 @@
 
 #include "kbhit.c" // Para poder detectar las teclas pulsadas sin bloqueo y leer las teclas pulsadas
 
-#define CLK_MS 10
 
 enum fsm_light_state {
 	LIGHT_ON,
@@ -41,13 +40,3 @@ enum fsm_code_state {
 	ALERT4
 };
 
-#define LIGHT_ACTIVE			0x01
-#define ALARM_BUTTON_PRESSED	0x10
-
-void *PC_keyboard (void *param);
-
-int LightButtonPressed (fsm_t *this);
-int LightTimeoutReached (fsm_t *this);
-
-void ActivateLight (fsm_t *this);
-void DeactivateLight (fsm_t *this);
