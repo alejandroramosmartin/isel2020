@@ -27,29 +27,23 @@ active proctype fsm_light () {
 	:: (state_light == LIGHT_ON) -> atomic {
 		if
 		:: button_light -> state_light = LIGHT_ON; button_light = 0; next = time + 60
-		:: (time >= next) -> state_light = LIGHT_OFF 
+		:: (time >= next) -> state_light = LIGHT_OFF
 		fi
 	}
 	od
 }
 
-active proctype temp_light () {
-	do
-	:: time = time + 1
 
-	printf ("state_light = %d, time = %d, next = %d \n", state_light, time, next)
 
-	od
-}
-
-active proctype light_button () {
+active proctype environment_light () {
 	do
 	::	if
-		:: (state_light == LIGHT_OFF) -> button_light = 1
-		:: (state_light == LIGHT_ON) -> button_light = 0
+		:: button_light = 1
+		:: time = time + 1
+		:: skip
 		fi;
 
-		printf ("state_light = %d, button_light = %d \n", state_light, button_light)
+		printf ("state_light = %d, button_light = %d, time = %d \n", state_light, button_light, time)
 	od
 }
 
@@ -195,68 +189,55 @@ active proctype fsm_alarm () {
 	do
 	:: (state_alarm == DISARMED) -> atomic {
 		if
-		:: digit_out -> state_alarm = DIGIT1
+		:: digit_out -> state_alarm = DIGIT1; digit_out = 0
 		fi
 	}
 	:: (state_alarm == DIGIT1) -> atomic {
 		if
-		:: digit_out -> state_alarm = DIGIT2
-		:: (armed && presence) -> state_alarm = ALERT1
+		:: digit_out -> state_alarm = DIGIT2; digit_out = 0
+		:: (armed && presence) -> state_alarm = ALERT1; armed = 0; presence = 0;
 		fi
 	}
 	:: (state_alarm == DIGIT2) -> atomic {
 		if
-		:: digit_out -> state_alarm = DIGIT3
-		:: (armed && presence) -> state_alarm = ALERT2
+		:: digit_out -> state_alarm = DIGIT3; digit_out = 0
+		:: (armed && presence) -> state_alarm = ALERT2; armed = 0; presence = 0;
 		fi
 	}
 	:: (state_alarm == DIGIT3) -> atomic {
 		if
-		:: (armed && code_ok) -> state_alarm = DISARMED
-		:: ((! armed) && code_ok) -> state_alarm = ARMED
+		:: (armed && code_ok) -> state_alarm = DISARMED; armed = 0; presence = 0;
+		:: ((! armed) && code_ok) -> state_alarm = ARMED; code_ok = 0
 		:: (! code_ok) -> state_alarm = NOT_OK
 		fi
 	}
 	:: (state_alarm == ARMED) -> atomic {
 		if
-		:: digit_out -> state_alarm = DIGIT1
-		:: presence -> state_alarm = ALERT3
+		:: digit_out -> state_alarm = DIGIT1; digit_out = 0
+		:: presence -> state_alarm = ALERT3; presence = 0
 		fi
 	}
 	:: (state_alarm == NOT_OK) -> atomic {
 		if
-		:: digit_out -> state_alarm = DIGIT1
-		:: (armed && presence) -> state_alarm = ALERT4
+		:: digit_out -> state_alarm = DIGIT1; digit_out = 0
+		:: (armed && presence) -> state_alarm = ALERT4; armed = 0; presence = 0;
 		fi
 	}
 	od
 }
 
-active proctype temp_alarm () {
-	do
-	:: _time = _time + 1
-
-	printf ("state_alarm = %d, state_digit = %d, time = %d, next = %d \n", state_alarm, state_digit, _time, _next)
-
-	od
-}
-
-active proctype alarm_button () {
+active proctype environment_alarm () {
 	do
 	::	if
-		:: (state_digit == IDLE) -> button_alarm = 1
-		:: (state_digit == D1) -> button_alarm = 1
-		:: (state_digit == D2) -> button_alarm = 0
-		:: (state_digit == D3) -> button_alarm = 0
-		:: (state_digit == D4) -> button_alarm = 0
-		:: (state_digit == D5) -> button_alarm = 0
-		:: (state_digit == D6) -> button_alarm = 0
-		:: (state_digit == D7) -> button_alarm = 0
-		:: (state_digit == D8) -> button_alarm = 0
-		:: (state_digit == D9) -> button_alarm = 0
-		:: (state_digit == D0) -> button_alarm = 0
+		:: button_alarm = 1
+		:: presence = 1
+		:: code_ok = 1
+		:: armed = 1
+		:: digit_out = 1
+		:: _time = _time + 1
+		:: skip
 		fi;
 
-		printf ("state_alarm = %d, state_digit = %d, button_alarm = %d \n", state_alarm, state_digit, button_alarm)
+		printf ("state_alarm = %d, state_digit = %d, button_alarm = %d, presence = %d, armed = %d, code_ok = %d, digit_out = %d, time = %d \n", state_alarm, state_digit, button_alarm, presence, armed, code_ok, digit_out, _time)
 	od
 }
