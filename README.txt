@@ -1,3 +1,5 @@
+Alumnos: IRIS RUBIO SÁEZ y ALEJANDRO RAMOS MARTÍN
+
 Para arrancar el programa deberá primero compilar el fichero domotic.c escribiendo el siguiente comando en el terminal:
 
 	gcc domotic.c -o domotic -pthread

@@ -209,6 +209,9 @@ void DisarmAlarm (fsm_t *this) {
 	mem_code[0] = -1;
 	mem_code[1] = -1;
 	mem_code[2] = -1;
+	alarm_code[0] = -1;
+	alarm_code[1] = -1;
+	alarm_code[2] = -1;
 	printf("Alarm Controller: [ALARM DISARMED]\n");
 
 	code_ok = 0;

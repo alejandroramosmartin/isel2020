@@ -18,6 +18,8 @@ int num_digits = 0;	//Count of digits written in the code
 int alarm_alert = 0; //Activated if presence detected and the alarm is armed
 int mem_code[3] = {-1,-1,-1};
 
+pthread_mutex_t mutex_r1;
+pthread_mutex_t mutex_r2;
 
 
 /*-------------------------------------------------------------
@@ -121,10 +123,17 @@ void SelectDigit (fsm_t *this) {
 		digit_count -= 10;
 	}
 
+	pthread_mutex_lock (&mutex_r1);
 	digit_out = digit_count;
-	digit_count = 0;
-	new_digit = 1;
 	printf("Alarm Controller: [DIGIT SELECTED: %d]\n", digit_out);
+	pthread_mutex_unlock (&mutex_r1);
+
+	digit_count = 0;
+
+	pthread_mutex_lock (&mutex_r2);
+	new_digit = 1;
+	pthread_mutex_lock (&mutex_r2);
+	
 }
 
 /*-------------------------------------------------------------
@@ -132,8 +141,13 @@ ALARM CODE CONTROL FUNCTIONS
 -------------------------------------------------------------*/
 
 int CheckNewDigit (fsm_t *this) {
+	int result;
 
-	return new_digit;
+	pthread_mutex_lock (&mutex_r2);
+	result = new_digit;
+	pthread_mutex_unlock (&mutex_r2);
+
+	return result;
 }
 
 int DetectedPresence (fsm_t *this) {
@@ -164,7 +178,9 @@ int always (fsm_t *this) {
 
 void AddToCode (fsm_t *this) {
 
+	pthread_mutex_lock (&mutex_r1);
 	alarm_code[num_digits] = digit_out;
+	pthread_mutex_unlock (&mutex_r1);
 	printf("Alarm Controller: [ALARM CODE: [%d,%d,%d]]\n", alarm_code[0], alarm_code[1], alarm_code[2]);
 
 	num_digits += 1;
@@ -209,6 +225,9 @@ void DisarmAlarm (fsm_t *this) {
 	mem_code[0] = -1;
 	mem_code[1] = -1;
 	mem_code[2] = -1;
+	alarm_code[0] = -1;
+	alarm_code[1] = -1;
+	alarm_code[2] = -1;
 	printf("Alarm Controller: [ALARM DISARMED]\n");
 
 	code_ok = 0;
@@ -400,14 +419,13 @@ int main() {
 	printf("If you want to exit the program please press q.\n");
 
 
-	pthread_mutex_t mutex;
-
 	pthread_t tid_keyboard;
 	pthread_t tid_light;
 	pthread_t tid_alarmdigit;
 	pthread_t tid_alarmcode;
 
-	mutex_init (&mutex, 4);
+	mutex_init (&mutex_r1, 2);
+	mutex_init (&mutex_r2, 2);
 
 	// Creates thread for keyboard lecture with maximum priority
 	tid_keyboard = task_new("keyboard", PC_keyboard, 5000, 5000, 4, 1024);

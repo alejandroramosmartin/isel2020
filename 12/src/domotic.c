@@ -242,6 +242,9 @@ void DisarmAlarm (fsm_t *this) {
 	mem_code[0] = -1;
 	mem_code[1] = -1;
 	mem_code[2] = -1;
+	alarm_code[0] = -1;
+	alarm_code[1] = -1;
+	alarm_code[2] = -1;
 	printf("Alarm Controller: [ALARM DISARMED]\n");
 
 	code_ok = 0;
@@ -377,18 +380,29 @@ int main() {
 	fsm_t* fsm_digit = fsm_new (digits);
 	fsm_t* fsm_code = fsm_new (code);
 
-	struct timeval period = { 0, 10 };
+	struct timeval period = { 0, 100 }; //100 us
 	struct timeval next;
 	gettimeofday(&next, NULL);
 
-	while (1) {
+	int frame = 0;
 
-		fsm_fire (fsm_light);
-		fsm_fire (fsm_digit);
-		fsm_fire (fsm_code);
+	while (1) {
+		switch(frame){
+			case 0:
+				fsm_fire (fsm_light);
+				break;
+			case 2:
+				fsm_fire (fsm_digit);
+				break;
+			case 6:
+				fsm_fire (fsm_code);
+				break;
+
+		}
 
 		timeval_add (&next, &next, &period);
 		delay_until (&next);
+		frame = (frame + 1) % 14;
 	}
 
 	return 0;
