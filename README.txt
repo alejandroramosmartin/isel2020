@@ -13,4 +13,4 @@ NOTA IMPORTANTE:
 
 Los ficheros para la lectura del teclado PC, kbhit.c, kbhit.h y dprintf.h, han sido copiados del código facilitado en la asignatura de SDG2 durante el curso 2018/19.
 
-Los ficheros task.c, task.h, reactor.c y reactor.h han sido copiados del repositorio de la asignatura de ISEL 2020: https://github.com/josemmoya/isel2020, así como algunas funciones utilizadas en los otros ficheros.
+Los ficheros fsm.c, fsm.h, task.c, task.h, reactor.c y reactor.h han sido copiados del repositorio de la asignatura de ISEL 2020: https://github.com/josemmoya/isel2020, así como algunas funciones utilizadas en los otros ficheros.
